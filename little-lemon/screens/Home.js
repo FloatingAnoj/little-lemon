@@ -1,6 +1,9 @@
 import {useState, useEffect} from 'react';
-import { View, Text, Image, TextInput, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, Image, TextInput, Dimensions } from 'react-native';
 import * as Font from 'expo-font';
+import { Feather } from '@expo/vector-icons';
+
+const windowHeight = Dimensions.get('window').height;
 
 const HomeScreen = () => {
   // loading custom font
@@ -8,8 +11,11 @@ const HomeScreen = () => {
   useEffect(() => {
     async function loadFonts() {
       await Font.loadAsync({
-        Markazi: require('../assets/Markazi_Text/static/MarkaziText-Medium.ttf'),
-        Karla: require('../assets/Karla/static/Karla-Medium.ttf'),
+        MarkaziMedium: require('../assets/Markazi_Text/static/MarkaziText-Medium.ttf'),
+        KarlaRegular: require('../assets/Karla/static/Karla-Regular.ttf'),
+        KarlaMedium: require('../assets/Karla/static/Karla-Medium.ttf'),
+        KarlaBold: require('../assets/Karla/static/Karla-Bold.ttf'),
+        KarlaExtraBold: require('../assets/Karla/static/Karla-ExtraBold.ttf'),
       });
       setFontLoaded(true);
     }
@@ -31,23 +37,56 @@ const HomeScreen = () => {
 
             {/* header component */}
             <View style={styles.header}>
-                <View style={styles.headerContent}>
-                    <Image source={require("../assets/Images/Logo.png")} />  
+                <View style={styles.logoContainer}>
+                    <Image source={require("../assets/Images/Logo.png")} style={styles.logo}/>  
+                </View>
+                <View style={styles.avatarContainer}>
                     <Image source={require("../assets/Images/Profile.png")} style={styles.avatar}/>  
                 </View>
             </View>
 
+
             {/* Hero section */}
             <View style={styles.heroSection}>
                 <Text style={styles.title}>Little Lemon</Text>
-                    {/* <View style={styles.textSection}>
+                <View style={styles.textAndImageSection}>
+                    <View style={styles.textSection}>
                         <Text style={styles.subTitle}>Chicago</Text>
                         <Text style={styles.leadText}>
                             We are a family owned Mediterranean restaurant, focused on traditional recipes served with a modern twist.
                         </Text>
-                        <TextInput placeholder="Search" style={{ flex: 1 }} />
-                    </View> */}
-                <Image source={require("../assets/Images/Logo.png")} style= {{height: 50, width: 50}}/>  
+                    </View>
+                    <Image source={require("../assets/Images/HeroImage.png")} style= {styles.imageSection} resizeMode="cover" />
+                </View>
+                <View style={styles.searchSection}>
+                    <Feather name="search" size={20} color="black" style={styles.searchIcon}/>
+                    <TextInput 
+                        style={styles.input} 
+                        placeholder="Search"
+                    />  
+                </View>
+            </View>
+
+            {/* Delivery section */}
+            <View style={styles.deliverySection}>
+                <Text style={styles.deliveryText}>Order for Delivery!</Text>
+                <Image source={require("../assets/DeliveryVan.png")} style={styles.customImage} />
+            </View>
+
+            {/* Category buttons */}
+            <View style={styles.buttonsContainer}>
+                <TouchableOpacity style={styles.categoryButton}>
+                    <Text style={styles.categoryButtonText}>Starters</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.categoryButton}>
+                    <Text style={styles.categoryButtonText}>Mains</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.categoryButton}>
+                    <Text style={styles.categoryButtonText}>Desserts</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.categoryButton}>
+                    <Text style={styles.categoryButtonText}>Sides</Text>
+                </TouchableOpacity>
             </View>
 
 
@@ -93,17 +132,26 @@ const styles = {
         height: 120,
         left: 0,
         right: 0,
-        flex: 0.15,
         backgroundColor: "#FFFFFF",
-        zIndex: 10
+        zIndex: 10,
+        flexDirection: 'row', // add this line
+        alignItems: 'flex-end', // add this line
+        justifyContent: 'center', // add this line
     },
-    headerContent: {
+    logoContainer: {
         flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-end',
-        paddingHorizontal: 30,
+        alignItems: 'center', // add this line
         paddingBottom: 15,
+    },
+    avatarContainer: {
+        position: 'absolute', // add this line
+        right: 30, // add this line
+        paddingBottom: 15,
+    },
+    logo: {
+        width: 150, // add this line
+        height: 50, // add this line
+        resizeMode: 'contain', // add this line
     },
     avatar: {
         width: 50,
@@ -112,18 +160,18 @@ const styles = {
     },
     heroSection: {
         paddingTop: 120,
-        flex: 0.4,
-        backgroundColor: "#495E57"
-    },
+        backgroundColor: "#495E57",
+        paddingBottom: 10, // add some padding bottom for spacing
+    }, 
     title: {
-        fontFamily: "Markazi",
+        fontFamily: "MarkaziMedium",
         fontSize: 64,
         fontWeight: "500",
         color: "#F5B912",
         paddingLeft: 15
     },
     subTitle: {
-        fontFamily: "Markazi",
+        fontFamily: "MarkaziMedium",
         fontSize: 40,
         fontWeight: "500",
         color: "#FFFFFF",
@@ -131,21 +179,56 @@ const styles = {
         marginTop: -15
     },
     leadText: {
-        fontFamily: "Karla",
+        fontFamily: "KarlaMedium",
         color: "#FFFFFF",
         fontSize: 18, 
         paddingLeft: 15,
-
-    },
-    imageContainer: {
-        flexDirection: "row",
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 15, // or any padding you prefer
-    },    
+        marginTop: 12,
+    },  
     textSection: {
-        flexDirection: "column"
+        flexDirection: "column",
+        flex: 1, // take up remaining space, except for the image
     },
+    textAndImageSection: {
+        flexDirection: 'row', 
+        marginBottom: 10, // ensure some space between this section and the next
+    },
+    imageSection: {
+        flex: 0.60, 
+        marginLeft: 15, 
+        width: 40,
+        height: 160, 
+        borderRadius: 12,
+        marginRight: 20, 
+        marginTop: 10
+    },
+    searchSection: {
+        flexDirection: 'row', // ensure search bar comes below the image
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        marginTop: 0,
+        margin: 15,
+        borderRadius: 8,
+        marginTop: 20, // ensure some space between this section and the previous,
+    },
+      searchIcon: {
+        height: 20,
+        width: 20,
+        resizeMode: 'stretch',
+        alignItems: 'center',
+        marginLeft: 10
+    },
+      input: {
+        flex: 1,
+        paddingTop: 10,
+        paddingRight: 10,
+        paddingBottom: 10,
+        marginLeft: 10,
+        backgroundColor: '#fff',
+        color: '#424242',
+        borderRadius: 8,
+      },
     deliveryText: {
 
     },
