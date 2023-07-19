@@ -21,8 +21,8 @@ const HomeScreen = () => {
 
     // Dummy data for FlatList
     const dishes = [
-        { title: 'Dish 1', description: 'This is a great dish...', price: '$12.99', image: require('../assets/Grilled fish.png') },
-        { title: 'Dish 2', description: 'This is another great dish...', price: '$13.99', image: require('../assets/Grilled fish.png') },
+        { title: 'Dish 1', description: 'This is a great dish...', price: '$12.99', image: require('../assets/Images/Grilled fish.png') },
+        { title: 'Dish 2', description: 'This is another great dish...', price: '$13.99', image: require('../assets/Images/Grilled fish.png') },
         // Add more dish objects here...
     ];
 
@@ -32,8 +32,8 @@ const HomeScreen = () => {
             {/* header component */}
             <View style={styles.header}>
                 <View style={styles.headerContent}>
-                    <Image source={require("../assets/Logo.png")} />  
-                    <Image source={require("../assets/Profile.png")} style={styles.avatar}/>  
+                    <Image source={require("../assets/Images/Logo.png")} />  
+                    <Image source={require("../assets/Images/Profile.png")} style={styles.avatar}/>  
                 </View>
             </View>
 
@@ -47,7 +47,7 @@ const HomeScreen = () => {
                         </Text>
                         <TextInput placeholder="Search" style={{ flex: 1 }} />
                     </View> */}
-                    <Image source={require("../assets/HeroImage.png")} style= {{height: 25, width: 25}} />  
+                <Image source={require("../assets/Images/Logo.png")} style= {{height: 50, width: 50}}/>  
             </View>
 
 

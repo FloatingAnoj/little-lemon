@@ -130,8 +130,8 @@ export default function Profile({ route, navigation }) {
             <TouchableOpacity style={styles.backButton} onPress={() => {}}>
                 <AntDesign name="arrowleft" size={20} color="white" />
             </TouchableOpacity>
-            <Image source={require("../assets/Logo.png")} />  
-            <Image source={require("../assets/Profile.png")} style={styles.avatar}/>  
+            <Image source={require("../assets/Images/Logo.png")} />  
+            <Image source={require("../assets/Images/Profile.png")} style={styles.avatar}/>  
         </View>
       </View>
 
