@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Onboarding from "./screens/Onboarding";
 import Profile from "./screens/Profile";
 import SplashScreen from './screens/SplashScreen'; // import SplashScreen
+import Home from './screens/Home';
 
 const Stack = createNativeStackNavigator();
 
@@ -46,11 +47,21 @@ export default function App() {
     return <SplashScreen />;
   }
 
+
   return (
     <NavigationContainer>
       <Stack.Navigator>
         {isOnboardingComplete ? (
-          <Stack.Screen name="Profile" component={Profile} options={{headerShown: false }} />
+          <>
+            <Stack.Screen 
+            name="Home" 
+            component={Home} 
+            options={{ headerShown: false }}/>
+            <Stack.Screen 
+            name="Profile" 
+            component={Profile} 
+            options={{ headerShown: false }}/>
+          </>
         ) : (
           <Stack.Screen name="Onboarding" options={{headerShown: false }}>
             {props => <Onboarding {...props} onDone={(firstName, email) => handleOnboardingComplete(firstName, email, props.navigation)} />}
