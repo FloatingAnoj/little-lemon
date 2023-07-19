@@ -1,14 +1,50 @@
-import {useState, useEffect} from 'react';
-import { View, Text, Image, TextInput, Dimensions } from 'react-native';
+import { useState, useEffect } from 'react';
+import { ScrollView, SafeAreaView, View, Text, Image, TextInput, Dimensions, TouchableOpacity, FlatList } from 'react-native';
 import * as Font from 'expo-font';
 import { Feather } from '@expo/vector-icons';
+import { Platform } from 'react-native';
+import * as SQLite from 'expo-sqlite';
 
-const windowHeight = Dimensions.get('window').height;
+const db = SQLite.openDatabase("little_lemon.db");
+
+db.transaction(tx => {
+  tx.executeSql(
+    "create table if not exists menu (id integer primary key not null, name text, description text, price real, image text);"
+  );
+});
 
 const HomeScreen = () => {
   // loading custom font
   const [fontLoaded, setFontLoaded] = useState(false);
+  const [dishes, setDishes] = useState([]);
+
   useEffect(() => {
+    const fetchMenu = async () => {
+      try {
+        const response = await fetch('https://raw.githubusercontent.com/Meta-Mobile-Developer-PC/Working-With-Data-API/main/capstone.json'); // replace 'YOUR_MENU_URL' with your actual API URL
+        const data = await response.json();
+
+        db.transaction(tx => {
+          data.menu.forEach(item => {
+            tx.executeSql("insert into menu (name, description, price, image) values (?, ?, ?, ?)", [item.name, item.description, item.price,
+              `https://github.com/Meta-Mobile-Developer-PC/Working-With-Data-API/blob/main/images/${item.image}?raw=true`]);
+          });
+        }, null, () => setDishes(data.menu));
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    db.transaction(tx => {
+      tx.executeSql("select * from menu;", [], (_, { rows: { _array } }) => {
+        if (_array.length > 0) {
+          setDishes(_array);
+        } else {
+          fetchMenu();
+        }
+      });
+    });
+
     async function loadFonts() {
       await Font.loadAsync({
         MarkaziMedium: require('../assets/Markazi_Text/static/MarkaziText-Medium.ttf'),
@@ -21,20 +57,13 @@ const HomeScreen = () => {
     }
     loadFonts();
   }, []);
+
   if (!fontLoaded) {
     return null;
   }
-
-    // Dummy data for FlatList
-    const dishes = [
-        { title: 'Dish 1', description: 'This is a great dish...', price: '$12.99', image: require('../assets/Images/Grilled fish.png') },
-        { title: 'Dish 2', description: 'This is another great dish...', price: '$13.99', image: require('../assets/Images/Grilled fish.png') },
-        // Add more dish objects here...
-    ];
-
+  
     return (
-        <View style={{ flex: 1, backgroundColor: '#fff' }}>
-
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
             {/* header component */}
             <View style={styles.header}>
                 <View style={styles.logoContainer}>
@@ -70,7 +99,7 @@ const HomeScreen = () => {
             {/* Delivery section */}
             <View style={styles.deliverySection}>
                 <Text style={styles.deliveryText}>Order for Delivery!</Text>
-                <Image source={require("../assets/DeliveryVan.png")} style={styles.customImage} />
+                <Image source={require("../assets/Images/DeliveryVan.png")} style={styles.customImage} />
             </View>
 
             {/* Category buttons */}
@@ -89,47 +118,32 @@ const HomeScreen = () => {
                 </TouchableOpacity>
             </View>
 
-
             
-            {/* Delivery section 
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 10 }}>
-                <Text style={{ textTransform: 'uppercase' }}>Order for Delivery!</Text>
-                <Image source={require('../assets/Hero image.png')} />
-            </View>
-
-            Category buttons 
-            <View style={{ flexDirection: 'row', justifyContent: 'space-around', padding: 10 }}>
-                <TouchableOpacity style={styles.button}><Text style={styles.buttonText}>Starters</Text></TouchableOpacity>
-                <TouchableOpacity style={styles.button}><Text style={styles.buttonText}>Mains</Text></TouchableOpacity>
-                <TouchableOpacity style={styles.button}><Text style={styles.buttonText}>Desserts</Text></TouchableOpacity>
-                <TouchableOpacity style={styles.button}><Text style={styles.buttonText}>Sides</Text></TouchableOpacity>
-            </View>
-
-            Menu items 
+            {/*Menu items*/}
             <FlatList 
                 data={dishes}
-                keyExtractor={item => item.title}
+                keyExtractor={item => item.name}
                 renderItem={({ item }) => (
-                    <View style={{ flexDirection: 'row', padding: 10 }}>
-                        <View style={{ flex: 1 }}>
-                            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{item.title}</Text>
-                            <Text style={{ flexWrap: 'wrap', maxWidth: 130, lineHeight: 20 }}>{item.description}</Text>
-                            <Text>{item.price}</Text>
+                    <View style={styles.itemContainer}>
+                        <View style={styles.itemInfo}>
+                            <Text style={styles.itemTitle}>{item.name}</Text>
+                            <Text style={styles.itemDescription} numberOfLines={2} ellipsizeMode='tail'>{item.description}</Text>
+                            <Text style={styles.itemPrice}>{item.price}</Text>
                         </View>
-                        <Image source={item.image} style={{ width: 50, height: 50 }} />
+                        <View style={styles.itemImageContainer}>
+                        <Image source={{uri: item.image}} style={styles.itemImage} resizeMode="cover" onError={(error) => console.log(error)}/>
+                        </View>
                     </View>
                 )}
             />
-                */}
-        </View>
+         </SafeAreaView>
     );
 }
 
 const styles = {
     header: {
-        position: 'absolute',
         top: 0,
-        height: 120,
+        height: Platform.OS === 'ios' ? 60 : 100,
         left: 0,
         right: 0,
         backgroundColor: "#FFFFFF",
@@ -159,16 +173,16 @@ const styles = {
         borderRadius: 25,
     },
     heroSection: {
-        paddingTop: 120,
         backgroundColor: "#495E57",
         paddingBottom: 10, // add some padding bottom for spacing
-    }, 
+    },
     title: {
         fontFamily: "MarkaziMedium",
         fontSize: 64,
         fontWeight: "500",
         color: "#F5B912",
-        paddingLeft: 15
+        paddingLeft: 15,
+        paddingTop: 10
     },
     subTitle: {
         fontFamily: "MarkaziMedium",
@@ -215,7 +229,6 @@ const styles = {
       searchIcon: {
         height: 20,
         width: 20,
-        resizeMode: 'stretch',
         alignItems: 'center',
         marginLeft: 10
     },
@@ -229,8 +242,86 @@ const styles = {
         color: '#424242',
         borderRadius: 8,
       },
+    deliverySection: {
+        flexDirection: 'row',
+        alignItems: "center",
+        padding: 15,
+        marginTop: 5,
+        paddingBottom: 0
+    },
     deliveryText: {
-
+        fontFamily: 'KarlaExtraBold',
+        fontSize: 20,
+        textTransform: 'uppercase'
+    },
+    customImage: {
+        width: 40,
+        height: 40,
+        resizeMode: 'contain',
+        marginLeft: 20,
+    },
+    buttonsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-evenly',
+        padding: 15,
+        paddingBottom: 30,
+        borderBottomWidth: 1,
+        borderBottomColor: "#D3D3D3"
+    },
+    categoryButton: {
+        backgroundColor: '#D3D3D3',
+        borderRadius: 15,
+        paddingHorizontal: 12, // adjust this as needed
+        paddingVertical: 10, // adjust this as needed
+        alignItems: 'center',
+        marginHorizontal: 10,
+    },
+    categoryButtonText: {
+        fontFamily: 'KarlaExtraBold',
+        fontSize: 14,
+        color: '#797474'
+    },
+    itemContainer: { 
+        flexDirection: 'row', 
+        padding: 10,
+        paddingVertical: 20,
+        paddingBottom: 25,
+        borderBottomWidth: 1,
+        borderBottomColor: "#DCDCDC"
+    },
+    itemInfo: {
+        flex: 0.75,
+        paddingLeft: 10
+    },
+    itemTitle: {
+        fontSize: 20,
+        fontFamily: "KarlaBold",
+        marginBottom: 10
+    },
+    itemDescription: {
+        fontFamily: "KarlaRegular",
+        fontSize: 16,
+        flexWrap: 'wrap', 
+        lineHeight: 20,
+        marginBottom: 5,
+        marginRight: 20
+    },
+    itemPrice: {
+        fontSize: 18,
+        fontFamily: "KarlaBold",
+    },
+    itemImageContainer: {
+        flex: 0.25,
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: 100,
+    },
+    itemImage: {
+        width: "90%",
+        height: '100%',
+        borderRadius: 15,
+        resizeMode: 'cover',
+        marginTop:5
     },
     button: {
         borderRadius: 10,
