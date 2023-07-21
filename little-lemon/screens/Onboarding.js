@@ -35,6 +35,7 @@ const Onboarding = ({ onDone }) => {
                 />
                 <Text style={styles.inputText}>Email</Text>
                 <TextInput
+                    keyboardType='email-address'
                     placeholder="Email"
                     style={styles.input}
                     onChangeText={setEmail}
