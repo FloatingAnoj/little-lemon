@@ -187,6 +187,7 @@ export default function Profile({ route, navigation }) {
                     {/* EMAIL */}
                     <Text style={styles.label}>Email</Text>
                     <TextInput
+                        keyboardType='email-address'
                         style={styles.input}
                         placeholder="Email"
                         value={email}
