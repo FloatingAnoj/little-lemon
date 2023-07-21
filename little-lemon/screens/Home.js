@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { ScrollView, SafeAreaView, View, Text, Image, TextInput, Dimensions, TouchableOpacity, FlatList } from 'react-native';
+import { ScrollView, SafeAreaView, View, Text, Image, TextInput, TouchableOpacity, FlatList } from 'react-native';
 import * as Font from 'expo-font';
 import { Feather } from '@expo/vector-icons';
 import { Platform } from 'react-native';
 import * as SQLite from 'expo-sqlite';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 
 
 const db = SQLite.openDatabase("little_lemon.db");
-
 
 db.transaction(tx => {
     tx.executeSql(
@@ -15,13 +16,38 @@ db.transaction(tx => {
     );
 });
 
-const HomeScreen = () => {
-    // Add state for selected categories
+function debounce(func, wait) {
+    let timeout;
+
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+};
+
+const HomeScreen = ({ route }) => {
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [categories, setCategories] = useState([]);
     const [fontLoaded, setFontLoaded] = useState(false);
     const [dishes, setDishes] = useState([]);
     const [searchText, setSearchText] = useState("");
+    const navigation = useNavigation();
+    const firstNameParam = route.params?.firstName;
+    const [firstName, setfirstName] = useState(firstNameParam);
+    const emailParam = route.params?.email;
+    const [email, setEmail] = useState(emailParam);
+    const [avatar, setAvatar] = useState(null);
+
+    const updateAvatar = (newAvatar) => {
+        setAvatar(newAvatar);
+    };
+
+    const debouncedSearch = debounce(text => setSearchText(text), 500);
 
     // Function to handle category selection
     const handleCategorySelect = (category) => {
@@ -31,16 +57,30 @@ const HomeScreen = () => {
             setSelectedCategories([...selectedCategories, category]);
         }
     };
-    
+
     useEffect(() => {
+        const loadAvatar = async () => {
+            try {
+                const savedProfile = await AsyncStorage.getItem('userProfile');
+                if (savedProfile !== null) {
+                    const profile = JSON.parse(savedProfile);
+                    setAvatar(profile.avatar);
+                }
+            } catch (e) {
+                console.log(e);
+            }
+        }
+
+        loadAvatar();
+
         const fetchMenu = async () => {
             try {
                 const response = await fetch('https://raw.githubusercontent.com/Meta-Mobile-Developer-PC/Working-With-Data-API/main/capstone.json');
                 const data = await response.json();
-    
+
                 const uniqueCategories = [...new Set(data.menu.map((item) => item.category))];
                 setCategories(uniqueCategories);
-    
+
                 db.transaction(tx => {
                     data.menu.forEach(item => {
                         tx.executeSql("select name from menu where name = ?;", [item.name], (_, { rows: { _array } }) => {
@@ -51,12 +91,12 @@ const HomeScreen = () => {
                     });
                 }, null, () => setDishes(data.menu));
             } catch (error) {
-                
+
             }
         };
-    
+
         fetchMenu();
-    
+
         db.transaction(tx => {
             tx.executeSql("select * from menu;", [], (_, { rows: { _array } }) => {
                 if (_array.length > 0) {
@@ -64,7 +104,7 @@ const HomeScreen = () => {
                 }
             });
         });
-    
+
         async function loadFonts() {
             await Font.loadAsync({
                 MarkaziMedium: require('../assets/Markazi_Text/static/MarkaziText-Medium.ttf'),
@@ -89,7 +129,10 @@ const HomeScreen = () => {
                     <Image source={require("../assets/Images/Logo.png")} style={styles.logo} />
                 </View>
                 <View style={styles.avatarContainer}>
-                    <Image source={require("../assets/Images/Profile.png")} style={styles.avatar} />
+                    <TouchableOpacity onPress={() => navigation.navigate('Profile', { firstName, email, updateAvatar })}>
+                        {avatar ? (<Image source={{ uri: avatar }} style={styles.avatar} />) : (
+                            <Image source={require("../assets/Images/Profile.png")} style={styles.avatar} />)}
+                    </TouchableOpacity>
                 </View>
             </View>
 
@@ -110,7 +153,7 @@ const HomeScreen = () => {
                     <TextInput
                         style={styles.input}
                         placeholder="Search"
-                        onChangeText={(text) => setSearchText(text)}
+                        onChangeText={(text) => debouncedSearch(text)}
                     />
                 </View>
             </View>
@@ -121,35 +164,35 @@ const HomeScreen = () => {
                 <Image source={require("../assets/Images/DeliveryVan.png")} style={styles.customImage} />
             </View>
 
-            <View style={{height: 70}}>
-            <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} style={styles.buttonsContainer} >
-                {categories.map((category) => (
-                    <TouchableOpacity
-                        key={category}
-                        style={[
-                            styles.categoryButton,
-                            // Apply different styles if category is selected
-                            selectedCategories.includes(category) && styles.categoryButtonSelected,
-                        ]}
-                        onPress={() => handleCategorySelect(category)}
-                    >
-                        <Text
+            <View style={{ height: 70 }}>
+                <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} style={styles.buttonsContainer} >
+                    {categories.map((category) => (
+                        <TouchableOpacity
+                            key={category}
                             style={[
-                                styles.categoryButtonText,
+                                styles.categoryButton,
                                 // Apply different styles if category is selected
-                                selectedCategories.includes(category) && styles.categoryButtonTextSelected,
+                                selectedCategories.includes(category) && styles.categoryButtonSelected,
                             ]}
+                            onPress={() => handleCategorySelect(category)}
                         >
-                            {category}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
+                            <Text
+                                style={[
+                                    styles.categoryButtonText,
+                                    // Apply different styles if category is selected
+                                    selectedCategories.includes(category) && styles.categoryButtonTextSelected,
+                                ]}
+                            >
+                                {category}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
             </View>
 
             {/*Menu items*/}
             <FlatList
-                style={{flex: 1}}
+                style={{ flex: 1 }}
                 data={selectedCategories.length > 0 ? dishes.filter(dish => selectedCategories.includes(dish.category) && dish.name.includes(searchText)) : dishes.filter(dish => dish.name.includes(searchText))}
                 keyExtractor={item => item.name}
                 renderItem={({ item }) => (
@@ -184,24 +227,24 @@ const styles = {
         right: 0,
         backgroundColor: "#FFFFFF",
         zIndex: 10,
-        flexDirection: 'row', // add this line
-        alignItems: 'flex-end', // add this line
-        justifyContent: 'center', // add this line
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        justifyContent: 'center',
     },
     logoContainer: {
         flex: 1,
-        alignItems: 'center', // add this line
+        alignItems: 'center',
         paddingBottom: 15,
     },
     avatarContainer: {
-        position: 'absolute', // add this line
-        right: 30, // add this line
+        position: 'absolute',
+        right: 30,
         paddingBottom: 15,
     },
     logo: {
-        width: 150, // add this line
-        height: 50, // add this line
-        resizeMode: 'contain', // add this line
+        width: 150,
+        height: 50,
+        resizeMode: 'contain',
     },
     avatar: {
         width: 50,
@@ -210,7 +253,7 @@ const styles = {
     },
     heroSection: {
         backgroundColor: "#495E57",
-        paddingBottom: 10, // add some padding bottom for spacing
+        paddingBottom: 10,
     },
     title: {
         fontFamily: "MarkaziMedium",
@@ -237,11 +280,11 @@ const styles = {
     },
     textSection: {
         flexDirection: "column",
-        flex: 1, // take up remaining space, except for the image
+        flex: 1,
     },
     textAndImageSection: {
         flexDirection: 'row',
-        marginBottom: 10, // ensure some space between this section and the next
+        marginBottom: 10,
     },
     imageSection: {
         flex: 0.60,
@@ -253,14 +296,14 @@ const styles = {
         marginTop: 10
     },
     searchSection: {
-        flexDirection: 'row', // ensure search bar comes below the image
+        flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#fff',
         marginTop: 0,
         margin: 15,
         borderRadius: 8,
-        marginTop: 20, // ensure some space between this section and the previous,
+        marginTop: 20,
     },
     searchIcon: {
         height: 20,
@@ -307,8 +350,8 @@ const styles = {
         backgroundColor: '#D3D3D3',
         borderRadius: 15,
         paddingVertical: 0,
-        paddingHorizontal: 12, // adjust this as needed
-        justifyContent: "center", // adjust this as needed, // Center content vertically // Center content horizontally
+        paddingHorizontal: 12,
+        justifyContent: "center",
         marginHorizontal: 10,
         marginTop: Platform.OS === 'ios' ? 10 : 5,
         marginVertical: Platform.OS === 'ios' ? 15 : 10,

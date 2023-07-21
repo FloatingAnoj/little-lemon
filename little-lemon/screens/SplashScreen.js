@@ -4,7 +4,10 @@ import { StyleSheet, Text, View } from 'react-native';
 export default function SplashScreen() {
   return (
     <View style={styles.container}>
-      <Text>Loading...</Text>
+      <Text style={{
+        justifyContent: 'center',
+        alignItems: 'center', color: "black"
+      }}>Loading...</Text>
     </View>
   )
 }

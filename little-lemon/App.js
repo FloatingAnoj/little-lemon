@@ -5,8 +5,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import Onboarding from "./screens/Onboarding";
 import Profile from "./screens/Profile";
-import SplashScreen from './screens/SplashScreen'; // import SplashScreen
+import SplashScreen from './screens/SplashScreen';
 import Home from './screens/Home';
+import Logout from './screens/Logout'
 
 const Stack = createNativeStackNavigator();
 
@@ -21,7 +22,7 @@ export default function App() {
         // value previously stored
         setOnboardingComplete(JSON.parse(status));
       }
-    } catch(e) {
+    } catch (e) {
       // error reading value
       console.log(e);
     }
@@ -32,13 +33,16 @@ export default function App() {
     try {
       await AsyncStorage.setItem('isOnboardingComplete', JSON.stringify(true));
       setOnboardingComplete(true);
-      navigation.navigate('Profile', { firstName, email });
-    } catch(e) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Home', params: { firstName, email } }],
+      });
+    } catch (e) {
       // error saving value
       console.log(e);
     }
-  }  
-  
+  }
+
   useEffect(() => {
     loadOnboardingStatus();
   }, []);
@@ -53,20 +57,29 @@ export default function App() {
       <Stack.Navigator>
         {isOnboardingComplete ? (
           <>
-            <Stack.Screen 
-            name="Home" 
-            component={Home} 
-            options={{ headerShown: false }}/>
-            <Stack.Screen 
-            name="Profile" 
-            component={Profile} 
-            options={{ headerShown: false }}/>
+            <Stack.Screen
+              name="Home"
+              component={Home}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Profile"
+              component={Profile}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Logout"
+              component={Logout}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen name="Onboarding" options={{ headerShown: false }}>
+              {props => <Onboarding {...props} onDone={(firstName, email) => handleOnboardingComplete(firstName, email, props.navigation)} />}
+            </Stack.Screen>
           </>
         ) : (
-          <Stack.Screen name="Onboarding" options={{headerShown: false }}>
+          <Stack.Screen name="Onboarding" options={{ headerShown: false }}>
             {props => <Onboarding {...props} onDone={(firstName, email) => handleOnboardingComplete(firstName, email, props.navigation)} />}
           </Stack.Screen>
-
         )}
       </Stack.Navigator>
     </NavigationContainer>
